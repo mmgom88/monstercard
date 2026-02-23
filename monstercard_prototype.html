@@ -1,0 +1,1955 @@
+<!DOCTYPE html>
+<!-- saved from url=(0061)file:///C:/Users/user/Downloads/monster-card-prototype_2.html -->
+<html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>몬스터 카드 시스템 프로토타입</title>
+<link href="./monstercard_prototype_files/css2" rel="stylesheet">
+<style>
+  :root {
+    --bg-dark: #0a0c10;
+    --bg-panel: #11151e;
+    --bg-card: #161b27;
+    --bg-card-hover: #1e2535;
+    --border: #2a3448;
+    --border-glow: #3d5a9e;
+    --gold: #d4a843;
+    --gold-light: #f0c870;
+    --silver: #8fa8cc;
+    --red: #c94040;
+    --green: #3db87a;
+    --blue: #4a8fd4;
+    --purple: #8b5cf6;
+    --cyan: #22d3ee;
+    --text-primary: #e8eaf0;
+    --text-secondary: #7a8ca8;
+    --text-muted: #44566a;
+    --pair-color: #3db87a;
+    --triple-color: #d4a843;
+    --straight-color: #c94040;
+    --fullhouse-color: #8b5cf6;
+    --twopair-color: #22d3ee;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* 배경 효과 */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: 
+      radial-gradient(ellipse 60% 40% at 20% 10%, rgba(61, 90, 158, 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 80% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  /* 헤더 */
+  header {
+    text-align: center;
+    padding: 24px 0 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+    position: relative;
+  }
+
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .header-title {
+    font-family: 'Cinzel', serif;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold), #a87c2a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+  }
+
+  .header-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* 탭 네비게이션 */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .tab-btn:hover { color: var(--text-primary); background: var(--bg-card); }
+  .tab-btn.active {
+    background: var(--bg-card);
+    color: var(--gold);
+    border: 1px solid var(--border);
+    box-shadow: 0 0 12px rgba(212, 168, 67, 0.1);
+  }
+
+  /* 패널 */
+  .panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .panel-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+
+  .panel-body { padding: 20px; }
+
+  /* 레이아웃 그리드 */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 20px;
+  }
+
+  .left-col { display: flex; flex-direction: column; gap: 20px; }
+  .right-col { display: flex; flex-direction: column; gap: 20px; }
+
+  /* ========================
+     카드 생성 폼
+     ======================== */
+  .form-group { margin-bottom: 16px; }
+  .form-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .form-input, .form-select {
+    width: 100%;
+    padding: 9px 12px;
+    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+
+  .form-input:focus, .form-select:focus {
+    border-color: var(--border-glow);
+    box-shadow: 0 0 0 2px rgba(61, 90, 158, 0.15);
+  }
+
+  .form-select option { background: var(--bg-panel); }
+
+  .stat-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* 등급 선택 */
+  .grade-selector {
+    display: flex;
+    gap: 6px;
+  }
+
+  .grade-btn {
+    flex: 1;
+    padding: 7px 4px;
+    border: 1px solid var(--border);
+    background: var(--bg-dark);
+    color: var(--text-muted);
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-align: center;
+    transition: all 0.2s;
+  }
+
+  .grade-btn:hover { opacity: 0.8; }
+  .grade-btn.active { color: #fff; }
+  .grade-btn[data-grade="N"].active { background: #4a5568; border-color: #718096; }
+  .grade-btn[data-grade="R"].active { background: #2563eb; border-color: #60a5fa; }
+  .grade-btn[data-grade="SR"].active { background: #7c3aed; border-color: #a78bfa; }
+  .grade-btn[data-grade="SSR"].active { background: #92400e; border-color: var(--gold); color: var(--gold-light); }
+
+  /* 생성 버튼 */
+  .btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #1a2d5a, #2a4080);
+    border: 1px solid var(--border-glow);
+    color: var(--gold-light);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+    transition: left 0.4s;
+  }
+
+  .btn-primary:hover::before { left: 100%; }
+  .btn-primary:hover {
+    border-color: var(--gold);
+    box-shadow: 0 0 20px rgba(212, 168, 67, 0.2);
+    transform: translateY(-1px);
+  }
+
+  .btn-danger {
+    padding: 5px 10px;
+    background: rgba(201, 64, 64, 0.15);
+    border: 1px solid rgba(201, 64, 64, 0.3);
+    color: var(--red);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    font-family: 'Noto Sans KR', sans-serif;
+    transition: all 0.2s;
+  }
+
+  .btn-danger:hover { background: rgba(201, 64, 64, 0.3); }
+
+  .btn-sm {
+    padding: 5px 12px;
+    background: rgba(61, 90, 158, 0.2);
+    border: 1px solid var(--border);
+    color: var(--silver);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    font-family: 'Noto Sans KR', sans-serif;
+    transition: all 0.2s;
+  }
+  .btn-sm:hover { background: rgba(61, 90, 158, 0.4); border-color: var(--border-glow); }
+
+  /* ========================
+     카드 컴포넌트
+     ======================== */
+  .card-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-item::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+    transition: opacity 0.2s;
+  }
+
+  .card-item[data-grade="N"]::before { background: #718096; }
+  .card-item[data-grade="R"]::before { background: #60a5fa; }
+  .card-item[data-grade="SR"]::before { background: #a78bfa; }
+  .card-item[data-grade="SSR"]::before { background: var(--gold); }
+
+  .card-item:hover { background: var(--bg-card-hover); border-color: var(--border-glow); transform: translateX(2px); }
+  .card-item.selected { border-color: var(--gold); background: rgba(212, 168, 67, 0.05); }
+  .card-item.equipped { border-color: var(--green); background: rgba(61, 184, 122, 0.05); }
+
+  .card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .card-info { flex: 1; min-width: 0; }
+
+  .card-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-grade-badge {
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-bottom: 3px;
+  }
+
+  .grade-N .card-grade-badge { background: #4a5568; color: #a0aec0; }
+  .grade-R .card-grade-badge { background: rgba(37,99,235,0.3); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); }
+  .grade-SR .card-grade-badge { background: rgba(124,58,237,0.3); color: #a78bfa; border: 1px solid rgba(167,139,250,0.3); }
+  .grade-SSR .card-grade-badge { background: rgba(146,64,14,0.3); color: var(--gold-light); border: 1px solid rgba(212,168,67,0.4); }
+
+  .card-stats {
+    font-size: 10px;
+    color: var(--text-secondary);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  .stat-badge {
+    padding: 1px 6px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+
+  .stat-badge.hp { color: #e57373; }
+  .stat-badge.atk { color: #ffa726; }
+  .stat-badge.def { color: #64b5f6; }
+  .stat-badge.spd { color: #81c784; }
+  .stat-badge.crit { color: #ff8a65; }
+  .stat-badge.crit_dmg { color: #ffcc02; }
+
+  /* ========================
+     카드 슬롯 (장착)
+     ======================== */
+  .slots-area { }
+
+  .slots-grid {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .slot {
+    width: 130px;
+    min-height: 170px;
+    background: var(--bg-card);
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .slot:hover:not(.filled) {
+    border-color: var(--border-glow);
+    background: rgba(61, 90, 158, 0.05);
+    box-shadow: 0 0 15px rgba(61, 90, 158, 0.1) inset;
+  }
+
+  .slot.filled {
+    border-style: solid;
+    cursor: default;
+  }
+
+  .slot.filled[data-grade="N"] { border-color: #718096; }
+  .slot.filled[data-grade="R"] { border-color: #60a5fa; box-shadow: 0 0 8px rgba(96,165,250,0.1) inset; }
+  .slot.filled[data-grade="SR"] { border-color: #a78bfa; box-shadow: 0 0 8px rgba(167,139,250,0.1) inset; }
+  .slot.filled[data-grade="SSR"] { border-color: var(--gold); box-shadow: 0 0 12px rgba(212,168,67,0.15) inset; }
+
+  .slot-number {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    position: absolute;
+    top: 8px; left: 10px;
+  }
+
+  .slot-empty-icon { font-size: 28px; opacity: 0.15; margin-bottom: 8px; }
+  .slot-empty-text { font-size: 10px; color: var(--text-muted); letter-spacing: 1px; }
+
+  .slot-card-icon { font-size: 36px; margin-bottom: 8px; }
+  .slot-card-name { font-size: 11px; font-weight: 700; color: var(--text-primary); text-align: center; padding: 0 8px; }
+  .slot-card-grade { font-size: 9px; font-weight: 900; margin-bottom: 6px; }
+  .slot-card-stats { font-size: 9px; color: var(--text-secondary); text-align: center; line-height: 1.6; }
+
+  .slot-remove {
+    position: absolute;
+    top: 6px; right: 6px;
+    width: 18px; height: 18px;
+    background: rgba(201,64,64,0.2);
+    border: 1px solid rgba(201,64,64,0.3);
+    color: var(--red);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 10px;
+    transition: all 0.2s;
+    opacity: 0;
+  }
+
+  .slot.filled:hover .slot-remove { opacity: 1; }
+  .slot-remove:hover { background: rgba(201,64,64,0.5); }
+
+  /* 세트 효과 표시 */
+  .set-effect-area {
+    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .set-effect-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .effect-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    border: 1px solid transparent;
+  }
+
+  .effect-row.individual { background: rgba(255,255,255,0.02); border-color: var(--border); }
+  .effect-row.set-pair { background: rgba(61,184,122,0.06); border-color: rgba(61,184,122,0.2); }
+  .effect-row.set-twopair { background: rgba(34,211,238,0.06); border-color: rgba(34,211,238,0.2); }
+  .effect-row.set-triple { background: rgba(212,168,67,0.06); border-color: rgba(212,168,67,0.2); }
+  .effect-row.set-fullhouse { background: rgba(139,92,246,0.06); border-color: rgba(139,92,246,0.2); }
+  .effect-row.set-straight { background: rgba(201,64,64,0.08); border-color: rgba(201,64,64,0.25); }
+
+  .effect-badge {
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .effect-badge.individual { background: rgba(255,255,255,0.08); color: var(--text-secondary); }
+  .effect-badge.pair { background: rgba(61,184,122,0.2); color: var(--pair-color); border: 1px solid rgba(61,184,122,0.3); }
+  .effect-badge.twopair { background: rgba(34,211,238,0.2); color: var(--twopair-color); border: 1px solid rgba(34,211,238,0.3); }
+  .effect-badge.triple { background: rgba(212,168,67,0.2); color: var(--triple-color); border: 1px solid rgba(212,168,67,0.3); }
+  .effect-badge.fullhouse { background: rgba(139,92,246,0.2); color: var(--fullhouse-color); border: 1px solid rgba(139,92,246,0.3); }
+  .effect-badge.straight { background: rgba(201,64,64,0.2); color: var(--straight-color); border: 1px solid rgba(201,64,64,0.3); }
+
+  .effect-content { flex: 1; }
+  .effect-label { font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
+  .effect-desc { font-size: 10px; color: var(--text-secondary); line-height: 1.5; }
+  .effect-stats { font-size: 10px; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+
+  .effect-stat-chip {
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-weight: 700;
+    font-size: 10px;
+  }
+
+  .effect-stat-chip.positive { background: rgba(61,184,122,0.15); color: var(--green); border: 1px solid rgba(61,184,122,0.2); }
+
+  .total-stats {
+    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-top: 12px;
+  }
+
+  .total-stats-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .total-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .total-stat-item {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+
+  .total-stat-name { font-size: 9px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 3px; }
+  .total-stat-val { font-size: 18px; font-weight: 900; line-height: 1; }
+  .total-stat-val.hp { color: #e57373; }
+  .total-stat-val.atk { color: #ffa726; }
+  .total-stat-val.def { color: #64b5f6; }
+  .total-stat-val.spd { color: #81c784; }
+  .total-stat-val.crit { color: #ff8a65; }
+  .total-stat-val.crit_dmg { color: #ffcc02; }
+
+  /* ========================
+     카드 목록
+     ======================== */
+  .card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 350px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .card-list::-webkit-scrollbar { width: 4px; }
+  .card-list::-webkit-scrollbar-track { background: transparent; }
+  .card-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ========================
+     가능한 세트 목록
+     ======================== */
+  .set-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .set-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .set-card:hover { border-color: var(--border-glow); transform: translateX(2px); }
+
+  .set-card.set-type-pair { border-left: 3px solid var(--pair-color); }
+  .set-card.set-type-twopair { border-left: 3px solid var(--twopair-color); }
+  .set-card.set-type-triple { border-left: 3px solid var(--triple-color); }
+  .set-card.set-type-fullhouse { border-left: 3px solid var(--fullhouse-color); }
+  .set-card.set-type-straight { border-left: 3px solid var(--straight-color); }
+  .set-card.set-type-none { border-left: 3px solid var(--text-muted); }
+
+  .set-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .set-rank { font-size: 11px; font-weight: 700; color: var(--text-muted); }
+
+  .set-score {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gold);
+    background: rgba(212,168,67,0.1);
+    border: 1px solid rgba(212,168,67,0.2);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .set-cards-preview {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  .set-card-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 10px;
+  }
+
+  .set-card-chip span { color: var(--text-secondary); }
+  .set-card-chip .chip-icon { font-size: 12px; }
+
+  .set-effects-preview { display: flex; gap: 6px; flex-wrap: wrap; }
+  .set-effect-chip {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: 700;
+  }
+
+  .set-apply-btn {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    padding: 5px 14px;
+    background: rgba(61,90,158,0.25);
+    border: 1px solid var(--border-glow);
+    color: var(--silver);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 10px;
+    font-family: 'Noto Sans KR', sans-serif;
+    letter-spacing: 1px;
+    font-weight: 700;
+    transition: all 0.2s;
+  }
+
+  .set-apply-btn:hover { background: rgba(61,90,158,0.5); color: var(--text-primary); }
+
+  /* 빈 상태 */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+
+  .empty-state-icon { font-size: 36px; opacity: 0.3; margin-bottom: 10px; }
+
+  /* 토스트 */
+  #toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 1000;
+    pointer-events: none;
+  }
+
+  #toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  #toast.success { border-color: var(--green); color: var(--green); }
+  #toast.error { border-color: var(--red); color: var(--red); }
+
+  /* 카드 선택 팝오버 */
+  .card-select-modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card-select-modal.open { display: flex; }
+
+  .card-select-inner {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    width: 500px;
+    max-width: 95vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-title { font-size: 14px; font-weight: 700; color: var(--gold); }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 0 4px;
+    transition: color 0.2s;
+  }
+
+  .modal-close:hover { color: var(--text-primary); }
+
+  .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  .modal-body .card-list { max-height: none; }
+
+  /* 필터 바 */
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .filter-chip {
+    padding: 4px 12px;
+    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+    transition: all 0.2s;
+  }
+
+  .filter-chip:hover { color: var(--text-primary); }
+  .filter-chip.active { background: rgba(61,90,158,0.2); border-color: var(--border-glow); color: var(--silver); }
+
+  /* 섹션 구분선 */
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 16px 0;
+  }
+
+  .section-divider-line { flex: 1; height: 1px; background: var(--border); }
+  .section-divider-text { font-size: 10px; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-in { animation: fadeIn 0.25s ease forwards; }
+
+  @media (max-width: 900px) {
+    .main-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="header-title">MONSTER CARD SYSTEM</div>
+    <div class="header-sub">Prototype v0.1 · Game Design Tool</div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(&#39;equip&#39;)">⚔️ 카드 장착</button>
+    <button class="tab-btn" onclick="switchTab(&#39;create&#39;)">✨ 카드 생성</button>
+    <button class="tab-btn" onclick="switchTab(&#39;sets&#39;)">🃏 가능한 세트 조합</button>
+  </div>
+
+  <!-- 장착 탭 -->
+  <div id="tab-equip" class="tab-content">
+    <div class="main-grid">
+      <div class="left-col">
+        <!-- 카드 인벤토리 -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">📦 인벤토리</div>
+            <span id="inv-count" style="font-size:11px;color:var(--text-muted);margin-left:auto;">5장</span>
+          </div>
+          <div class="panel-body" style="padding:12px;">
+            <div class="filter-bar" id="inv-filter">
+              <div class="filter-chip active" data-filter="all" onclick="filterInventory(&#39;all&#39;,this)">전체</div>
+              <div class="filter-chip" data-filter="N" onclick="filterInventory(&#39;N&#39;,this)">N</div>
+              <div class="filter-chip" data-filter="R" onclick="filterInventory(&#39;R&#39;,this)">R</div>
+              <div class="filter-chip" data-filter="SR" onclick="filterInventory(&#39;SR&#39;,this)">SR</div>
+              <div class="filter-chip" data-filter="SSR" onclick="filterInventory(&#39;SSR&#39;,this)">SSR</div>
+            </div>
+            <div class="card-list" id="inventory-list"><div class="card-item grade-R" data-grade="R" data-id="qlyxfub" style="animation:fadeIn 0.2s ease">
+      <div class="card-icon" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);">👺</div>
+      <div class="card-info">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+          <span class="card-grade-badge">R</span>
+          <span style="font-size:10px;color:var(--text-muted);">goblin</span>
+        </div>
+        <div class="card-name">불꽃 고블린</div>
+        <div class="card-stats"><span class="stat-badge hp">+100 HP</span><span class="stat-badge atk">+80 공격</span><span class="stat-badge spd">+5 속도</span><span class="stat-badge crit">+3% 치명률</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+        <button class="btn-sm" onclick="quickEquip(&#39;qlyxfub&#39;)">장착</button>
+      </div>
+    </div><div class="card-item grade-R" data-grade="R" data-id="bsiv3af" style="animation:fadeIn 0.2s ease">
+      <div class="card-icon" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);">👹</div>
+      <div class="card-info">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+          <span class="card-grade-badge">R</span>
+          <span style="font-size:10px;color:var(--text-muted);">goblin</span>
+        </div>
+        <div class="card-name">수호 고블린</div>
+        <div class="card-stats"><span class="stat-badge hp">+200 HP</span><span class="stat-badge atk">+30 공격</span><span class="stat-badge def">+60 방어</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+        <button class="btn-sm" onclick="quickEquip(&#39;bsiv3af&#39;)">장착</button>
+      </div>
+    </div><div class="card-item grade-N" data-grade="N" data-id="os6ajhb" style="animation:fadeIn 0.2s ease">
+      <div class="card-icon" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);">🌑</div>
+      <div class="card-info">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+          <span class="card-grade-badge">N</span>
+          <span style="font-size:10px;color:var(--text-muted);">slime</span>
+        </div>
+        <div class="card-name">암흑 슬라임</div>
+        <div class="card-stats"><span class="stat-badge hp">+50 HP</span><span class="stat-badge atk">+20 공격</span><span class="stat-badge def">+10 방어</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+        <button class="btn-sm" onclick="quickEquip(&#39;os6ajhb&#39;)">장착</button>
+      </div>
+    </div><div class="card-item grade-N" data-grade="N" data-id="4e4u3hx" style="animation:fadeIn 0.2s ease">
+      <div class="card-icon" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);">🔥</div>
+      <div class="card-info">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+          <span class="card-grade-badge">N</span>
+          <span style="font-size:10px;color:var(--text-muted);">slime</span>
+        </div>
+        <div class="card-name">용암 슬라임</div>
+        <div class="card-stats"><span class="stat-badge hp">+30 HP</span><span class="stat-badge atk">+50 공격</span><span class="stat-badge def">+5 방어</span><span class="stat-badge crit">+2% 치명률</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+        <button class="btn-sm" onclick="quickEquip(&#39;4e4u3hx&#39;)">장착</button>
+      </div>
+    </div><div class="card-item grade-SSR" data-grade="SSR" data-id="7wgbmzd" style="animation:fadeIn 0.2s ease">
+      <div class="card-icon" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);">🐉</div>
+      <div class="card-info">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+          <span class="card-grade-badge">SSR</span>
+          <span style="font-size:10px;color:var(--text-muted);">dragon</span>
+        </div>
+        <div class="card-name">고대 드래곤</div>
+        <div class="card-stats"><span class="stat-badge hp">+500 HP</span><span class="stat-badge atk">+300 공격</span><span class="stat-badge def">+100 방어</span><span class="stat-badge spd">+10 속도</span><span class="stat-badge crit">+10% 치명률</span><span class="stat-badge crit_dmg">+30% 치명피해</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+        <button class="btn-sm" onclick="quickEquip(&#39;7wgbmzd&#39;)">장착</button>
+      </div>
+    </div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="right-col">
+        <!-- 슬롯 장착 영역 -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">⚔️ 카드 슬롯</div>
+            <span style="font-size:11px;color:var(--text-muted);margin-left:auto;">슬롯을 클릭하여 카드를 장착하세요</span>
+          </div>
+          <div class="panel-body">
+            <div class="slots-grid" id="slots-grid">
+        <div class="slot" onclick="openModal(0)">
+          <div class="slot-number">SLOT 1</div>
+          <div class="slot-empty-icon">⬜</div>
+          <div class="slot-empty-text">클릭하여 장착</div>
+        </div>
+        <div class="slot" onclick="openModal(1)">
+          <div class="slot-number">SLOT 2</div>
+          <div class="slot-empty-icon">⬜</div>
+          <div class="slot-empty-text">클릭하여 장착</div>
+        </div>
+        <div class="slot" onclick="openModal(2)">
+          <div class="slot-number">SLOT 3</div>
+          <div class="slot-empty-icon">⬜</div>
+          <div class="slot-empty-text">클릭하여 장착</div>
+        </div>
+        <div class="slot" onclick="openModal(3)">
+          <div class="slot-number">SLOT 4</div>
+          <div class="slot-empty-icon">⬜</div>
+          <div class="slot-empty-text">클릭하여 장착</div>
+        </div>
+        <div class="slot" onclick="openModal(4)">
+          <div class="slot-number">SLOT 5</div>
+          <div class="slot-empty-icon">⬜</div>
+          <div class="slot-empty-text">클릭하여 장착</div>
+        </div></div>
+          </div>
+        </div>
+
+        <!-- 효과 합산 -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">✨ 효과 합산</div>
+          </div>
+          <div class="panel-body">
+            <div id="effect-summary"><div class="empty-state" style="padding:20px;"><div class="empty-state-icon">📊</div>카드를 장착하면 효과가 표시됩니다</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 생성 탭 -->
+  <div id="tab-create" class="tab-content" style="display:none;">
+    <div class="main-grid">
+      <div class="left-col">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">✨ 카드 생성</div>
+          </div>
+          <div class="panel-body">
+            <div class="form-group">
+              <label class="form-label">몬스터 이름</label>
+              <input class="form-input" id="card-name" placeholder="예: 불꽃 고블린" maxlength="20">
+            </div>
+            <div class="form-group">
+              <label class="form-label">몬스터 종류 (동일 종류는 중복 장착 불가)</label>
+              <input class="form-input" id="card-type" placeholder="예: goblin, slime, dragon..." maxlength="20">
+            </div>
+            <div class="form-group">
+              <label class="form-label">아이콘</label>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;" id="icon-selector">
+    <div onclick="selectIcon(&#39;🔥&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(61,90,158,0.3);
+      border:1px solid var(--border-glow);
+    " data-icon="🔥">🔥</div>
+  
+    <div onclick="selectIcon(&#39;💧&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="💧">💧</div>
+  
+    <div onclick="selectIcon(&#39;⚡&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="⚡">⚡</div>
+  
+    <div onclick="selectIcon(&#39;🌿&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="🌿">🌿</div>
+  
+    <div onclick="selectIcon(&#39;🌑&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="🌑">🌑</div>
+  
+    <div onclick="selectIcon(&#39;❄️&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="❄️">❄️</div>
+  
+    <div onclick="selectIcon(&#39;🐉&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="🐉">🐉</div>
+  
+    <div onclick="selectIcon(&#39;🐺&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="🐺">🐺</div>
+  
+    <div onclick="selectIcon(&#39;🦂&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="🦂">🦂</div>
+  
+    <div onclick="selectIcon(&#39;🦁&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="🦁">🦁</div>
+  
+    <div onclick="selectIcon(&#39;🐸&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="🐸">🐸</div>
+  
+    <div onclick="selectIcon(&#39;🦊&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="🦊">🦊</div>
+  
+    <div onclick="selectIcon(&#39;🦇&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="🦇">🦇</div>
+  
+    <div onclick="selectIcon(&#39;🕷️&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="🕷️">🕷️</div>
+  
+    <div onclick="selectIcon(&#39;💀&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="💀">💀</div>
+  
+    <div onclick="selectIcon(&#39;⚔️&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="⚔️">⚔️</div>
+  
+    <div onclick="selectIcon(&#39;🗡️&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="🗡️">🗡️</div>
+  
+    <div onclick="selectIcon(&#39;🛡️&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="🛡️">🛡️</div>
+  
+    <div onclick="selectIcon(&#39;🌀&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="🌀">🌀</div>
+  
+    <div onclick="selectIcon(&#39;🌪️&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="🌪️">🌪️</div>
+  
+    <div onclick="selectIcon(&#39;🔮&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="🔮">🔮</div>
+  
+    <div onclick="selectIcon(&#39;💎&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="💎">💎</div>
+  
+    <div onclick="selectIcon(&#39;👹&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="👹">👹</div>
+  
+    <div onclick="selectIcon(&#39;👺&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="👺">👺</div>
+  
+    <div onclick="selectIcon(&#39;🐲&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="🐲">🐲</div>
+  
+    <div onclick="selectIcon(&#39;🦅&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="🦅">🦅</div>
+  
+    <div onclick="selectIcon(&#39;🐍&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="🐍">🐍</div>
+  
+    <div onclick="selectIcon(&#39;🦈&#39;,this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+    " data-icon="🦈">🦈</div>
+  </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">등급</label>
+              <div class="grade-selector">
+                <button class="grade-btn" data-grade="N" onclick="selectGrade(&#39;N&#39;,this)">N</button>
+                <button class="grade-btn active" data-grade="R" onclick="selectGrade(&#39;R&#39;,this)">R</button>
+                <button class="grade-btn" data-grade="SR" onclick="selectGrade(&#39;SR&#39;,this)">SR</button>
+                <button class="grade-btn" data-grade="SSR" onclick="selectGrade(&#39;SSR&#39;,this)">SSR</button>
+              </div>
+            </div>
+
+            <div class="section-divider">
+              <div class="section-divider-line"></div>
+              <div class="section-divider-text">개별 효과 스탯</div>
+              <div class="section-divider-line"></div>
+            </div>
+
+            <div class="stat-row">
+              <div class="form-group">
+                <label class="form-label">❤️ HP</label>
+                <input class="form-input" id="stat-hp" type="number" min="0" max="9999" placeholder="0">
+              </div>
+              <div class="form-group">
+                <label class="form-label">⚔️ 공격력</label>
+                <input class="form-input" id="stat-atk" type="number" min="0" max="9999" placeholder="0">
+              </div>
+            </div>
+            <div class="stat-row">
+              <div class="form-group">
+                <label class="form-label">🛡️ 방어력</label>
+                <input class="form-input" id="stat-def" type="number" min="0" max="9999" placeholder="0">
+              </div>
+              <div class="form-group">
+                <label class="form-label">💨 이동속도</label>
+                <input class="form-input" id="stat-spd" type="number" min="0" max="999" placeholder="0">
+              </div>
+            </div>
+            <div class="stat-row">
+              <div class="form-group">
+                <label class="form-label">🎯 치명타율 (%)</label>
+                <input class="form-input" id="stat-crit" type="number" min="0" max="100" placeholder="0">
+              </div>
+              <div class="form-group">
+                <label class="form-label">💥 치명타 피해 (%)</label>
+                <input class="form-input" id="stat-crit_dmg" type="number" min="0" max="999" placeholder="0">
+              </div>
+            </div>
+
+            <div class="section-divider">
+              <div class="section-divider-line"></div>
+              <div class="section-divider-text">세트 효과 (족보용)</div>
+              <div class="section-divider-line"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">페어 효과 설명</label>
+              <input class="form-input" id="set-pair" placeholder="예: HP +500, 피해감소 +5%">
+            </div>
+            <div class="form-group">
+              <label class="form-label">트리플 효과 설명</label>
+              <input class="form-input" id="set-triple" placeholder="예: 공격력 +15%, 치명타율 +10%">
+            </div>
+            <div class="form-group">
+              <label class="form-label">스트레이트 효과 설명 (5장 동일 종류)</label>
+              <input class="form-input" id="set-straight" placeholder="예: 원소 폭발 데미지 +30%">
+            </div>
+
+            <button class="btn-primary" onclick="createCard()">✨ 카드 생성</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="right-col">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">📦 생성된 카드 목록</div>
+            <button class="btn-danger" style="margin-left:auto;" onclick="clearAll()">전체 삭제</button>
+          </div>
+          <div class="panel-body" style="padding:12px;">
+            <div class="card-list" id="created-card-list" style="max-height:600px;">
+    <div class="card-item grade-R" data-grade="R" data-id="qlyxfub" style="animation:fadeIn 0.2s ease">
+      <div class="card-icon" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);">👺</div>
+      <div class="card-info">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+          <span class="card-grade-badge">R</span>
+          <span style="font-size:10px;color:var(--text-muted);">goblin</span>
+        </div>
+        <div class="card-name">불꽃 고블린</div>
+        <div class="card-stats"><span class="stat-badge hp">+100 HP</span><span class="stat-badge atk">+80 공격</span><span class="stat-badge spd">+5 속도</span><span class="stat-badge crit">+3% 치명률</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+        <button class="btn-danger" onclick="deleteCard(&#39;qlyxfub&#39;)">삭제</button>
+      </div>
+    </div>
+  
+    <div class="card-item grade-R" data-grade="R" data-id="bsiv3af" style="animation:fadeIn 0.2s ease">
+      <div class="card-icon" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);">👹</div>
+      <div class="card-info">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+          <span class="card-grade-badge">R</span>
+          <span style="font-size:10px;color:var(--text-muted);">goblin</span>
+        </div>
+        <div class="card-name">수호 고블린</div>
+        <div class="card-stats"><span class="stat-badge hp">+200 HP</span><span class="stat-badge atk">+30 공격</span><span class="stat-badge def">+60 방어</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+        <button class="btn-danger" onclick="deleteCard(&#39;bsiv3af&#39;)">삭제</button>
+      </div>
+    </div>
+  
+    <div class="card-item grade-N" data-grade="N" data-id="os6ajhb" style="animation:fadeIn 0.2s ease">
+      <div class="card-icon" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);">🌑</div>
+      <div class="card-info">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+          <span class="card-grade-badge">N</span>
+          <span style="font-size:10px;color:var(--text-muted);">slime</span>
+        </div>
+        <div class="card-name">암흑 슬라임</div>
+        <div class="card-stats"><span class="stat-badge hp">+50 HP</span><span class="stat-badge atk">+20 공격</span><span class="stat-badge def">+10 방어</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+        <button class="btn-danger" onclick="deleteCard(&#39;os6ajhb&#39;)">삭제</button>
+      </div>
+    </div>
+  
+    <div class="card-item grade-N" data-grade="N" data-id="4e4u3hx" style="animation:fadeIn 0.2s ease">
+      <div class="card-icon" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);">🔥</div>
+      <div class="card-info">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+          <span class="card-grade-badge">N</span>
+          <span style="font-size:10px;color:var(--text-muted);">slime</span>
+        </div>
+        <div class="card-name">용암 슬라임</div>
+        <div class="card-stats"><span class="stat-badge hp">+30 HP</span><span class="stat-badge atk">+50 공격</span><span class="stat-badge def">+5 방어</span><span class="stat-badge crit">+2% 치명률</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+        <button class="btn-danger" onclick="deleteCard(&#39;4e4u3hx&#39;)">삭제</button>
+      </div>
+    </div>
+  
+    <div class="card-item grade-SSR" data-grade="SSR" data-id="7wgbmzd" style="animation:fadeIn 0.2s ease">
+      <div class="card-icon" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);">🐉</div>
+      <div class="card-info">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+          <span class="card-grade-badge">SSR</span>
+          <span style="font-size:10px;color:var(--text-muted);">dragon</span>
+        </div>
+        <div class="card-name">고대 드래곤</div>
+        <div class="card-stats"><span class="stat-badge hp">+500 HP</span><span class="stat-badge atk">+300 공격</span><span class="stat-badge def">+100 방어</span><span class="stat-badge spd">+10 속도</span><span class="stat-badge crit">+10% 치명률</span><span class="stat-badge crit_dmg">+30% 치명피해</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+        <button class="btn-danger" onclick="deleteCard(&#39;7wgbmzd&#39;)">삭제</button>
+      </div>
+    </div>
+  </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 세트 조합 탭 -->
+  <div id="tab-sets" class="tab-content" style="display:none;">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">🃏 가능한 세트 조합</div>
+        <span style="font-size:11px;color:var(--text-muted);margin-left:auto;">효과 점수 기준 정렬 · 클릭시 슬롯에 바로 적용</span>
+      </div>
+      <div class="panel-body">
+        <div id="all-sets-list"><div class="empty-state"><div class="empty-state-icon">🃏</div>장착 가능한 5장 조합이 없습니다<br><small style="color:var(--text-muted);">(동일 종류 카드는 중복 장착 불가)</small></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 카드 선택 모달 -->
+<div class="card-select-modal" id="card-modal">
+  <div class="card-select-inner">
+    <div class="modal-header">
+      <div class="modal-title">카드 선택</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="card-list" id="modal-card-list"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ================================
+// 데이터
+// ================================
+let cards = [];
+let equippedSlots = [null, null, null, null, null];
+let selectedGrade = 'R';
+let selectedIcon = '🔥';
+let activeModalSlot = null;
+let invFilter = 'all';
+
+const ICONS = ['🔥','💧','⚡','🌿','🌑','❄️','🐉','🐺','🦂','🦁','🐸','🦊','🦇','🕷️','💀','⚔️','🗡️','🛡️','🌀','🌪️','🔮','💎','👹','👺','🐲','🦅','🐍','🦈'];
+
+const STAT_LABELS = { hp: 'HP', atk: '공격', def: '방어', spd: '속도', crit: '치명률', crit_dmg: '치명피해' };
+const STAT_UNIT = { hp: '', atk: '', def: '', spd: '', crit: '%', crit_dmg: '%' };
+
+// ================================
+// 초기화
+// ================================
+function init() {
+  renderIconSelector();
+  renderSlots();
+  loadSampleCards();
+}
+
+function loadSampleCards() {
+  const samples = [
+    { id: uid(), name: '불꽃 고블린', type: 'goblin', icon: '👺', grade: 'R', stats: { hp: 100, atk: 80, def: 0, spd: 5, crit: 3, crit_dmg: 0 }, setEffects: { pair: 'ATK +10%', triple: 'ATK +20%, CRIT +5%', straight: '원소 폭발 데미지 +25%' }},
+    { id: uid(), name: '수호 고블린', type: 'goblin', icon: '👹', grade: 'R', stats: { hp: 200, atk: 30, def: 60, spd: 0, crit: 0, crit_dmg: 0 }, setEffects: { pair: 'ATK +10%', triple: 'ATK +20%, CRIT +5%', straight: '원소 폭발 데미지 +25%' }},
+    { id: uid(), name: '암흑 슬라임', type: 'slime', icon: '🌑', grade: 'N', stats: { hp: 50, atk: 20, def: 10, spd: 0, crit: 0, crit_dmg: 0 }, setEffects: { pair: 'DEF +15%', triple: 'HP +1000, DEF +20%', straight: '피해 흡수 +10%' }},
+    { id: uid(), name: '용암 슬라임', type: 'slime', icon: '🔥', grade: 'N', stats: { hp: 30, atk: 50, def: 5, spd: 0, crit: 2, crit_dmg: 0 }, setEffects: { pair: 'DEF +15%', triple: 'HP +1000, DEF +20%', straight: '피해 흡수 +10%' }},
+    { id: uid(), name: '고대 드래곤', type: 'dragon', icon: '🐉', grade: 'SSR', stats: { hp: 500, atk: 300, def: 100, spd: 10, crit: 10, crit_dmg: 30 }, setEffects: { pair: 'ATK +25%', triple: 'ATK +40%, CRIT_DMG +20%', straight: '용의 분노: 스킬 데미지 +50%' }},
+  ];
+  cards = samples;
+  renderAll();
+}
+
+function uid() { return Math.random().toString(36).slice(2,9); }
+
+// ================================
+// 렌더링
+// ================================
+function renderAll() {
+  renderInventory();
+  renderCreatedList();
+  renderSlots();
+  renderEffectSummary();
+  renderAllSets();
+}
+
+function renderIconSelector() {
+  const el = document.getElementById('icon-selector');
+  el.innerHTML = ICONS.map(icon => `
+    <div onclick="selectIcon('${icon}',this)" style="
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      font-size:20px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      background:${icon===selectedIcon?'rgba(61,90,158,0.3)':'rgba(255,255,255,0.03)'};
+      border:1px solid ${icon===selectedIcon?'var(--border-glow)':'var(--border)'};
+    " data-icon="${icon}">${icon}</div>
+  `).join('');
+}
+
+function selectIcon(icon, el) {
+  selectedIcon = icon;
+  renderIconSelector();
+}
+
+function selectGrade(grade, el) {
+  selectedGrade = grade;
+  document.querySelectorAll('.grade-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function filterInventory(filter, el) {
+  invFilter = filter;
+  document.querySelectorAll('#inv-filter .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderInventory();
+}
+
+function renderCardItem(card, actions) {
+  const statStr = Object.entries(card.stats)
+    .filter(([,v]) => v > 0)
+    .map(([k,v]) => `<span class="stat-badge ${k}">+${v}${STAT_UNIT[k]} ${STAT_LABELS[k]}</span>`)
+    .join('');
+
+  const gradeColor = { N:'#718096', R:'#60a5fa', SR:'#a78bfa', SSR:'#d4a843' };
+
+  return `
+    <div class="card-item grade-${card.grade}" data-grade="${card.grade}" data-id="${card.id}" style="animation:fadeIn 0.2s ease">
+      <div class="card-icon" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);">${card.icon}</div>
+      <div class="card-info">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+          <span class="card-grade-badge">${card.grade}</span>
+          <span style="font-size:10px;color:var(--text-muted);">${card.type}</span>
+        </div>
+        <div class="card-name">${card.name}</div>
+        <div class="card-stats">${statStr || '<span style="color:var(--text-muted)">스탯 없음</span>'}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+        ${actions}
+      </div>
+    </div>
+  `;
+}
+
+function renderInventory() {
+  const el = document.getElementById('inventory-list');
+  document.getElementById('inv-count').textContent = cards.length + '장';
+
+  const filtered = invFilter === 'all' ? cards : cards.filter(c => c.grade === invFilter);
+
+  if (!filtered.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎴</div>해당 등급의 카드가 없습니다</div>`;
+    return;
+  }
+
+  // 장착된 카드 ID 체크
+  const equippedIds = equippedSlots.filter(Boolean).map(c => c.id);
+
+  el.innerHTML = filtered.map(card => {
+    const isEquipped = equippedIds.includes(card.id);
+    const dom = document.createElement('div');
+    dom.innerHTML = renderCardItem(card,
+      isEquipped
+        ? `<span style="font-size:9px;color:var(--green);font-weight:700;letter-spacing:1px;">장착중</span>`
+        : `<button class="btn-sm" onclick="quickEquip('${card.id}')">장착</button>`
+    );
+    const item = dom.firstElementChild;
+    if (isEquipped) item.classList.add('equipped');
+    return item.outerHTML;
+  }).join('');
+}
+
+function renderCreatedList() {
+  const el = document.getElementById('created-card-list');
+  if (!cards.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎴</div>생성된 카드가 없습니다</div>`;
+    return;
+  }
+  el.innerHTML = cards.map(card =>
+    renderCardItem(card, `<button class="btn-danger" onclick="deleteCard('${card.id}')">삭제</button>`)
+  ).join('');
+}
+
+function renderSlots() {
+  const el = document.getElementById('slots-grid');
+  el.innerHTML = equippedSlots.map((card, i) => {
+    if (!card) {
+      return `
+        <div class="slot" onclick="openModal(${i})">
+          <div class="slot-number">SLOT ${i+1}</div>
+          <div class="slot-empty-icon">⬜</div>
+          <div class="slot-empty-text">클릭하여 장착</div>
+        </div>`;
+    }
+    const statLines = Object.entries(card.stats).filter(([,v]) => v > 0)
+      .map(([k,v]) => `+${v}${STAT_UNIT[k]} ${STAT_LABELS[k]}`).join('\n');
+
+    return `
+      <div class="slot filled" data-grade="${card.grade}">
+        <div class="slot-number">SLOT ${i+1}</div>
+        <div class="slot-remove" onclick="unequipSlot(${i})">✕</div>
+        <div class="slot-card-icon">${card.icon}</div>
+        <div class="slot-card-name">${card.name}</div>
+        <div class="slot-card-grade" style="color:${getGradeColor(card.grade)}">${card.grade} · ${card.type}</div>
+        <div class="slot-card-stats">${Object.entries(card.stats).filter(([,v])=>v>0).map(([k,v])=>`+${v}${STAT_UNIT[k]} ${STAT_LABELS[k]}`).join('<br>')}</div>
+      </div>`;
+  }).join('');
+}
+
+function getGradeColor(g) {
+  return { N:'#718096', R:'#60a5fa', SR:'#a78bfa', SSR:'#d4a843' }[g] || '#fff';
+}
+
+function renderEffectSummary() {
+  const el = document.getElementById('effect-summary');
+  const equipped = equippedSlots.filter(Boolean);
+
+  if (!equipped.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:20px;"><div class="empty-state-icon">📊</div>카드를 장착하면 효과가 표시됩니다</div>`;
+    return;
+  }
+
+  // 개별 효과 합산
+  const totalStats = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, crit_dmg: 0 };
+  equipped.forEach(c => Object.keys(totalStats).forEach(k => totalStats[k] += (c.stats[k] || 0)));
+
+  // 세트 효과 계산
+  const setResult = calcSetEffects(equipped);
+
+  let html = `<div class="set-effect-area">
+    <div class="set-effect-title">적용 중인 효과</div>`;
+
+  // 개별효과
+  html += `<div class="effect-row individual">
+    <span class="effect-badge individual">개별</span>
+    <div class="effect-content">
+      <div class="effect-label">5장 개별 스탯</div>
+      <div class="effect-stats">
+        ${Object.entries(totalStats).filter(([,v])=>v>0).map(([k,v])=>`<span class="effect-stat-chip positive">+${v}${STAT_UNIT[k]} ${STAT_LABELS[k]}</span>`).join('')}
+      </div>
+    </div>
+  </div>`;
+
+  // 세트효과
+  if (setResult.type !== 'none') {
+    const typeMap = {
+      pair: {label:'페어', cls:'pair', rowCls:'set-pair'},
+      twopair: {label:'투 페어', cls:'twopair', rowCls:'set-twopair'},
+      triple: {label:'트리플', cls:'triple', rowCls:'set-triple'},
+      fullhouse: {label:'풀 하우스', cls:'fullhouse', rowCls:'set-fullhouse'},
+      straight: {label:'스트레이트', cls:'straight', rowCls:'set-straight'},
+    };
+
+    setResult.effects.forEach(eff => {
+      const t = typeMap[eff.setType] || {};
+      html += `<div class="effect-row ${t.rowCls||''}">
+        <span class="effect-badge ${t.cls||''}">${t.label||''}</span>
+        <div class="effect-content">
+          <div class="effect-label">${eff.cardTypes.join(' + ')} ${t.label}</div>
+          <div class="effect-desc">${eff.desc}</div>
+        </div>
+      </div>`;
+    });
+  } else {
+    html += `<div style="font-size:11px;color:var(--text-muted);padding:8px 4px;">세트 효과 없음</div>`;
+  }
+
+  html += `</div>`;
+
+  // 합산 스탯
+  html += `<div class="total-stats">
+    <div class="total-stats-title">총 합산 스탯</div>
+    <div class="total-stats-grid">
+      <div class="total-stat-item"><div class="total-stat-name">HP</div><div class="total-stat-val hp">+${totalStats.hp}</div></div>
+      <div class="total-stat-item"><div class="total-stat-name">공격</div><div class="total-stat-val atk">+${totalStats.atk}</div></div>
+      <div class="total-stat-item"><div class="total-stat-name">방어</div><div class="total-stat-val def">+${totalStats.def}</div></div>
+      <div class="total-stat-item"><div class="total-stat-name">속도</div><div class="total-stat-val spd">+${totalStats.spd}</div></div>
+      <div class="total-stat-item"><div class="total-stat-name">치명률</div><div class="total-stat-val crit">+${totalStats.crit}%</div></div>
+      <div class="total-stat-item"><div class="total-stat-name">치명피해</div><div class="total-stat-val crit_dmg">+${totalStats.crit_dmg}%</div></div>
+    </div>
+  </div>`;
+
+  // 세트 타입 표시
+  const setTypeNames = { none:'족보 없음', pair:'페어', twopair:'투 페어', triple:'트리플', fullhouse:'풀 하우스', straight:'스트레이트' };
+  const setTypeColors = { none:'var(--text-muted)', pair:'var(--pair-color)', twopair:'var(--twopair-color)', triple:'var(--triple-color)', fullhouse:'var(--fullhouse-color)', straight:'var(--straight-color)' };
+  html += `<div style="margin-top:10px;text-align:center;font-size:11px;font-weight:700;letter-spacing:2px;color:${setTypeColors[setResult.type]||'var(--text-muted)'}">
+    🃏 ${setTypeNames[setResult.type]||'족보 없음'}
+  </div>`;
+
+  el.innerHTML = html;
+}
+
+function calcSetEffects(equipped) {
+  if (equipped.length < 2) return { type: 'none', effects: [] };
+
+  // 종류별 카운트
+  const typeCount = {};
+  equipped.forEach(c => typeCount[c.type] = (typeCount[c.type] || 0) + 1);
+
+  const counts = Object.values(typeCount).sort((a,b) => b-a);
+  const types = Object.keys(typeCount);
+
+  const effects = [];
+
+  // 스트레이트: 5장 같은 종류
+  if (counts[0] === 5) {
+    const card = equipped.find(c => c.type === types.find(t => typeCount[t] === 5));
+    effects.push({ setType: 'straight', cardTypes: [card.type], desc: card.setEffects.straight || '스트레이트 효과 없음' });
+    return { type: 'straight', effects };
+  }
+
+  // 풀하우스: 3+2
+  if (counts[0] === 3 && counts[1] === 2) {
+    const tripleType = types.find(t => typeCount[t] === 3);
+    const pairType = types.find(t => typeCount[t] === 2);
+    const tripleCard = equipped.find(c => c.type === tripleType);
+    const pairCard = equipped.find(c => c.type === pairType);
+    effects.push({ setType: 'triple', cardTypes: [tripleType], desc: tripleCard.setEffects.triple || '트리플 효과 없음' });
+    effects.push({ setType: 'pair', cardTypes: [pairType], desc: pairCard.setEffects.pair || '페어 효과 없음' });
+    return { type: 'fullhouse', effects };
+  }
+
+  // 트리플
+  if (counts[0] === 3) {
+    const tripleType = types.find(t => typeCount[t] === 3);
+    const tripleCard = equipped.find(c => c.type === tripleType);
+    effects.push({ setType: 'triple', cardTypes: [tripleType], desc: tripleCard.setEffects.triple || '트리플 효과 없음' });
+    return { type: 'triple', effects };
+  }
+
+  // 투 페어: 2+2
+  if (counts[0] >= 2 && counts[1] >= 2) {
+    const pairTypes = types.filter(t => typeCount[t] >= 2);
+    pairTypes.forEach(pt => {
+      const pairCard = equipped.find(c => c.type === pt);
+      effects.push({ setType: 'pair', cardTypes: [pt], desc: pairCard.setEffects.pair || '페어 효과 없음' });
+    });
+    return { type: 'twopair', effects };
+  }
+
+  // 페어
+  if (counts[0] >= 2) {
+    const pairType = types.find(t => typeCount[t] >= 2);
+    const pairCard = equipped.find(c => c.type === pairType);
+    effects.push({ setType: 'pair', cardTypes: [pairType], desc: pairCard.setEffects.pair || '페어 효과 없음' });
+    return { type: 'pair', effects };
+  }
+
+  return { type: 'none', effects: [] };
+}
+
+// ================================
+// 가능한 세트 조합
+// ================================
+function renderAllSets() {
+  const el = document.getElementById('all-sets-list');
+
+  if (cards.length < 5) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🃏</div>카드를 5장 이상 생성하면 가능한 세트 조합이 표시됩니다<br><small style="color:var(--text-muted);">(현재 ${cards.length}장)</small></div>`;
+    return;
+  }
+
+  // 5장짜리 조합 생성 (중복 종류 제외)
+  const combos = getCombinations(cards, 5).filter(combo => {
+    const types = combo.map(c => c.type);
+    return new Set(types).size === types.length; // 동일 종류 중복 불가
+  });
+
+  if (!combos.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🃏</div>장착 가능한 5장 조합이 없습니다<br><small style="color:var(--text-muted);">(동일 종류 카드는 중복 장착 불가)</small></div>`;
+    return;
+  }
+
+  // 점수 계산 및 정렬
+  const scored = combos.map(combo => {
+    const setResult = calcSetEffects(combo);
+    const totalStats = { hp:0, atk:0, def:0, spd:0, crit:0, crit_dmg:0 };
+    combo.forEach(c => Object.keys(totalStats).forEach(k => totalStats[k] += (c.stats[k]||0)));
+    const score = totalStats.hp * 0.5 + totalStats.atk * 2 + totalStats.def * 1.5 + totalStats.spd * 10 + totalStats.crit * 15 + totalStats.crit_dmg * 8
+      + (setResult.type === 'straight' ? 1000 : setResult.type === 'fullhouse' ? 700 : setResult.type === 'triple' ? 500 : setResult.type === 'twopair' ? 400 : setResult.type === 'pair' ? 200 : 0);
+
+    return { combo, setResult, totalStats, score };
+  });
+
+  scored.sort((a,b) => b.score - a.score);
+
+  const typeLabels = { none:'족보 없음', pair:'페어', twopair:'투 페어', triple:'트리플', fullhouse:'풀 하우스', straight:'스트레이트' };
+  const typeColors = { none:'var(--text-muted)', pair:'var(--pair-color)', twopair:'var(--twopair-color)', triple:'var(--triple-color)', fullhouse:'var(--fullhouse-color)', straight:'var(--straight-color)' };
+
+  const top20 = scored.slice(0, 20);
+
+  el.innerHTML = top20.map((item, idx) => {
+    const setLabel = typeLabels[item.setResult.type] || '족보 없음';
+    const setColor = typeColors[item.setResult.type];
+    const cardIds = item.combo.map(c=>c.id).join(',');
+
+    const effectsHtml = item.setResult.effects.map(eff =>
+      `<span class="set-effect-chip" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);color:${setColor};">${eff.desc}</span>`
+    ).join('');
+
+    const statSummary = Object.entries(item.totalStats).filter(([,v])=>v>0).map(([k,v])=>`+${v}${STAT_UNIT[k]} ${STAT_LABELS[k]}`).join(' · ');
+
+    return `
+      <div class="set-card set-type-${item.setResult.type} animate-in" style="animation-delay:${idx*0.03}s">
+        <div class="set-header">
+          <span class="set-rank" style="color:${idx===0?'var(--gold)':idx<=2?'var(--silver)':'var(--text-muted)'}">#${idx+1}</span>
+          <span class="effect-badge ${item.setResult.type === 'none' ? 'individual' : item.setResult.type}" style="">${setLabel}</span>
+          <span class="set-score">점수: ${Math.round(item.score)}</span>
+        </div>
+        <div class="set-cards-preview">
+          ${item.combo.map(c=>`
+            <div class="set-card-chip">
+              <span class="chip-icon">${c.icon}</span>
+              <span style="color:${getGradeColor(c.grade)}">${c.name}</span>
+            </div>
+          `).join('')}
+        </div>
+        <div style="font-size:10px;color:var(--text-secondary);margin-bottom:8px;">${statSummary}</div>
+        ${effectsHtml ? `<div class="set-effects-preview">${effectsHtml}</div>` : ''}
+        <button class="set-apply-btn" onclick="applySetToSlots('${cardIds}')">슬롯에 적용</button>
+      </div>
+    `;
+  }).join('') + (scored.length > 20 ? `<div style="text-align:center;padding:16px;font-size:11px;color:var(--text-muted);">... 외 ${scored.length-20}개 조합</div>` : '');
+}
+
+function getCombinations(arr, k) {
+  if (k === 1) return arr.map(x => [x]);
+  const result = [];
+  for (let i = 0; i <= arr.length - k; i++) {
+    const rest = getCombinations(arr.slice(i+1), k-1);
+    rest.forEach(combo => result.push([arr[i], ...combo]));
+  }
+  return result;
+}
+
+function applySetToSlots(cardIds) {
+  const ids = cardIds.split(',');
+  const combo = ids.map(id => cards.find(c => c.id === id)).filter(Boolean);
+  if (combo.length !== 5) return showToast('조합 적용 오류', 'error');
+  equippedSlots = combo.slice(0, 5);
+  renderAll();
+  switchTab('equip');
+  showToast('세트가 슬롯에 적용되었습니다!', 'success');
+}
+
+// ================================
+// 카드 CRUD
+// ================================
+function createCard() {
+  const name = document.getElementById('card-name').value.trim();
+  const type = document.getElementById('card-type').value.trim().toLowerCase();
+
+  if (!name) return showToast('몬스터 이름을 입력하세요', 'error');
+  if (!type) return showToast('몬스터 종류를 입력하세요', 'error');
+
+  const stats = {
+    hp: parseInt(document.getElementById('stat-hp').value) || 0,
+    atk: parseInt(document.getElementById('stat-atk').value) || 0,
+    def: parseInt(document.getElementById('stat-def').value) || 0,
+    spd: parseInt(document.getElementById('stat-spd').value) || 0,
+    crit: parseInt(document.getElementById('stat-crit').value) || 0,
+    crit_dmg: parseInt(document.getElementById('stat-crit_dmg').value) || 0,
+  };
+
+  const hasStats = Object.values(stats).some(v => v > 0);
+  if (!hasStats) return showToast('최소 1개의 스탯을 입력하세요', 'error');
+
+  const card = {
+    id: uid(),
+    name,
+    type,
+    icon: selectedIcon,
+    grade: selectedGrade,
+    stats,
+    setEffects: {
+      pair: document.getElementById('set-pair').value.trim() || `${type} 페어 효과`,
+      triple: document.getElementById('set-triple').value.trim() || `${type} 트리플 효과`,
+      straight: document.getElementById('set-straight').value.trim() || `${type} 스트레이트 효과`,
+    }
+  };
+
+  cards.push(card);
+  renderAll();
+  clearForm();
+  showToast(`"${name}" 카드가 생성되었습니다!`, 'success');
+}
+
+function clearForm() {
+  ['card-name','card-type','stat-hp','stat-atk','stat-def','stat-spd','stat-crit','stat-crit_dmg','set-pair','set-triple','set-straight']
+    .forEach(id => { document.getElementById(id).value = ''; });
+}
+
+function deleteCard(id) {
+  cards = cards.filter(c => c.id !== id);
+  equippedSlots = equippedSlots.map(c => c && c.id === id ? null : c);
+  renderAll();
+  showToast('카드가 삭제되었습니다', '');
+}
+
+function clearAll() {
+  if (!confirm('모든 카드를 삭제하시겠습니까?')) return;
+  cards = [];
+  equippedSlots = [null,null,null,null,null];
+  renderAll();
+}
+
+// ================================
+// 슬롯 장착/해제
+// ================================
+function quickEquip(cardId) {
+  const card = cards.find(c => c.id === cardId);
+  if (!card) return;
+
+  // 이미 같은 종류 장착 여부
+  const alreadyType = equippedSlots.some(s => s && s.type === card.type && s.id !== cardId);
+  if (alreadyType) return showToast(`동일 종류(${card.type}) 카드가 이미 장착되어 있습니다`, 'error');
+
+  // 이미 장착 여부
+  const alreadyEquipped = equippedSlots.some(s => s && s.id === cardId);
+  if (alreadyEquipped) return showToast('이미 장착된 카드입니다', 'error');
+
+  // 빈 슬롯에 장착
+  const emptySlot = equippedSlots.indexOf(null);
+  if (emptySlot === -1) return showToast('장착 슬롯이 가득 찼습니다', 'error');
+
+  equippedSlots[emptySlot] = card;
+  renderAll();
+  showToast(`슬롯 ${emptySlot+1}에 "${card.name}" 장착!`, 'success');
+}
+
+function openModal(slotIdx) {
+  activeModalSlot = slotIdx;
+  const el = document.getElementById('modal-card-list');
+
+  const equippedTypes = equippedSlots
+    .filter((c,i) => c && i !== slotIdx)
+    .map(c => c.type);
+
+  const equippedIds = equippedSlots
+    .filter((c,i) => c && i !== slotIdx)
+    .map(c => c.id);
+
+  const available = cards.filter(c => !equippedTypes.includes(c.type) && !equippedIds.includes(c.id));
+
+  if (!available.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎴</div>장착 가능한 카드가 없습니다</div>`;
+  } else {
+    el.innerHTML = available.map(card =>
+      renderCardItem(card, `<button class="btn-sm" onclick="equipToSlot('${card.id}')">선택</button>`)
+    ).join('');
+  }
+
+  document.getElementById('card-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('card-modal').classList.remove('open');
+  activeModalSlot = null;
+}
+
+function equipToSlot(cardId) {
+  if (activeModalSlot === null) return;
+  const card = cards.find(c => c.id === cardId);
+  if (!card) return;
+  equippedSlots[activeModalSlot] = card;
+  closeModal();
+  renderAll();
+  showToast(`슬롯 ${activeModalSlot+1}에 "${card.name}" 장착!`, 'success');
+}
+
+function unequipSlot(slotIdx) {
+  const card = equippedSlots[slotIdx];
+  equippedSlots[slotIdx] = null;
+  renderAll();
+  if (card) showToast(`"${card.name}" 해제`, '');
+}
+
+// ================================
+// 탭 전환
+// ================================
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+  document.getElementById('tab-' + tab).style.display = 'block';
+  document.querySelectorAll('.tab-btn')[['equip','create','sets'].indexOf(tab)].classList.add('active');
+
+  if (tab === 'sets') renderAllSets();
+}
+
+// ================================
+// 토스트
+// ================================
+let toastTimer;
+function showToast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 2500);
+}
+
+// 클릭 밖 모달 닫기
+document.getElementById('card-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+init();
+</script>
+
+
+</body></html>

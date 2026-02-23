@@ -2033,116 +2033,99 @@ function renderEffectSummary() {
   const el = document.getElementById('effect-summary');
   const equipped = slots.filter(Boolean);
   
-  // 1. 인벤토리 카드로 즉시 발동 가능한 세트 계산
-  const inventoryTypes = new Set(userInventory.map(c => c.type));
-  const { active: activeSets } = calcActiveSetEffects(equipped);
-  const activeIds = new Set(activeSets.map(s => s.id));
-  
-  const buildableSets = setDefs.filter(def => {
-    if (activeIds.has(def.id)) return false; // 이미 장착 중인 세트 제외
-    // 세트 구성품이 모두 인벤토리에 있는지 확인
-    return def.cardTypes.every(type => inventoryTypes.has(type));
-  });
-
-  // 2. 장착된 카드도 없고, 인벤토리로 완성 가능한 세트도 없을 때만 비어있음 표시
-  if (equipped.length === 0 && buildableSets.length === 0) {
-    el.innerHTML = `<div class="empty" style="padding:16px;"><div class="empty-ico">📊</div>카드를 장착하거나 획득하면 세트 가이드가 표시됩니다</div>`;
+  if (!equipped.length) {
+    el.innerHTML = `<div class="empty" style="padding:16px;"><div class="empty-ico">📊</div>카드를 장착하면 세트 가이드가 표시됩니다</div>`;
     return;
   }
 
-  // 3. 렌더링 시작
-  let html = `<div class="set-area">`;
+  // 1. 활성 세트와 장착 타입 정보를 가져옴 (객체 분할 대입)
+  const result = calcActiveSetEffects(equipped);
+  const activeSets = result.active;
+  const equippedTypes = result.equippedTypes;
+  const activeIds = new Set(activeSets.map(s => s.id));
 
-  // [A] 장착 중인 효과 섹션 (카드가 있을 때만)
-  const individualStats = {}; // 개별 스탯 합산용 객체 선언
-  if (equipped.length > 0) {
-    html += `<div class="set-area-title">적용 중인 효과</div>`;
-    
-    // 개별 스탯 합산 계산
-    equipped.forEach(c => {
-      const e = effStats(c);
-      Object.entries(e).forEach(([k, v]) => { individualStats[k] = (individualStats[k] || 0) + v; });
-    });
-
-    html += `<div class="eff-row ind">
-      <span class="eff-badge" style="background:rgba(255,255,255,.06);color:var(--text3);">개별</span>
-      <div>
-        <div class="eff-label">개별 스탯 합산</div>
-        <div class="eff-stats">${Object.entries(individualStats).filter(([,v])=>v>0).map(([k,v])=>{
-          const def=STAT_MAP[k]; return `<span class="eff-stat-chip">+${v}${def?def.unit:''} ${def?def.label:k}</span>`;
-        }).join('')}</div>
-      </div>
-    </div>`;
-
-    // 활성 세트 효과 출력
-    if (activeSets.length > 0) {
-      activeSets.forEach(def => {
-        const gc = GRADE_COLOR[def.grade] || 'var(--text3)';
-        const gl = GRADE_LABEL[def.grade] || def.grade;
-        html += `
-          <div class="active-set-row grade-${def.grade}" style="border-left: 3px solid ${gc}; padding-left: 10px; margin-bottom: 8px; background: rgba(255,255,255,0.02); padding: 8px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-              <span style="font-size:11px; font-weight:700; color:var(--gold);">${def.name}</span>
-              <span class="set-def-grade" style="background:${gc}20;color:${gc};font-size:9px;padding:1px 6px;border-radius:3px;">⚡ ${gl}</span>
-            </div>
-            <div class="active-set-desc" style="font-size:10px; color:var(--text2); margin-bottom:4px;">${def.desc || ''}</div>
-          </div>`;
-      });
-    } else {
-      html += `<div style="font-size:10px; color:var(--text3); padding:8px 4px;">⬥ 발동 중인 세트 효과 없음</div>`;
-    }
-  }
-
-  // [B] 즉시 장착 가능 조합 (인벤토리에 재료가 다 모였을 때)
-  if (buildableSets.length > 0) {
-    html += `<div class="divider"><div class="divider-txt" style="font-size:8px; color:var(--green);">즉시 장착 가능 조합</div></div>`;
-    buildableSets.forEach(def => {
-      const gl = GRADE_LABEL[def.grade] || def.grade;
-      html += `
-        <div class="potential-set-row" 
-             style="border: 1px solid var(--green); background: rgba(52, 211, 153, 0.05); cursor: pointer; padding: 10px; border-radius: 7px; margin-bottom: 6px;"
-             onclick="equipSetFromGuide('${def.id}')">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-size:11px; font-weight:700; color:var(--text1);">⚡ ${def.name}</span>
-            <span class="potential-badge" style="border: 1px solid var(--green); color:var(--green); font-size:9px; padding:1px 5px; border-radius:3px;">${gl} 장착</span>
-          </div>
-          <div style="font-size:9px; color:var(--text2); opacity:0.8;">${def.cardTypes.join(' + ')}</div>
-        </div>`;
-    });
-  }
-
-  // [C] 조합 가이드 (장착한 카드가 포함된 모든 족보)
+  // 2. 가이드 세트 계산 (이미 발동된 건 제외, 장착 카드 중 1장이라도 포함된 모든 세트)
   const potentialSets = setDefs.filter(def => {
     if (activeIds.has(def.id)) return false; 
-    const equippedTypes = new Set(equipped.map(c => c.type));
     const matchCount = def.cardTypes.filter(t => equippedTypes.has(t)).length;
     return matchCount > 0;
   });
 
+  let html = `<div class="set-area"><div class="set-area-title">적용 중인 효과</div>`;
+
+  // 3. 개별 스탯 합산 렌더링 (카드 자체 스탯)
+  const individualStats = {};
+  equipped.forEach(c => {
+    const e = effStats(c);
+    Object.entries(e).forEach(([k, v]) => { individualStats[k] = (individualStats[k] || 0) + v; });
+  });
+
+  html += `<div class="eff-row ind">
+    <span class="eff-badge" style="background:rgba(255,255,255,.06);color:var(--text3);">개별</span>
+    <div>
+      <div class="eff-label">개별 스탯 합산</div>
+      <div class="eff-stats">${Object.entries(individualStats).filter(([,v])=>v>0).map(([k,v])=>{
+        const def=STAT_MAP[k]; return `<span class="eff-stat-chip">+${v}${def?def.unit:''} ${def?def.label:k}</span>`;
+      }).join('')}</div>
+    </div>
+  </div>`;
+
+  // 4. 현재 적용 중인 세트 효과 렌더링
+  if (activeSets.length > 0) {
+    activeSets.forEach(def => {
+      const gc = GRADE_COLOR[def.grade] || 'var(--text3)';
+      const gl = GRADE_LABEL[def.grade] || def.grade;
+      const effChips = Object.entries(def.effect || {}).filter(([,v])=>v>0).map(([k,v])=>{
+        const d=STAT_MAP[k]; return `<span class="eff-stat-chip" style="background:rgba(232,184,75,.08);border-color:rgba(232,184,75,.2);color:var(--gold2);">+${v}${d?d.unit:''} ${d?d.label:k}</span>`;
+      }).join('');
+
+      html += `
+        <div class="active-set-row grade-${def.grade}">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span style="font-size:11px; font-weight:700; color:var(--gold);">${def.name}</span>
+            <span class="set-def-grade" style="background:${gc}20;color:${gc};font-size:9px;padding:1px 6px;border-radius:3px;">⚡ ${gl}</span>
+          </div>
+          <div class="active-set-desc" style="font-size:10px; color:var(--text2); margin-bottom:4px;">${def.desc || ''}</div>
+          <div class="active-set-bonus">${effChips}</div>
+        </div>`;
+    });
+  } else {
+    html += `<div style="font-size:10px; color:var(--text3); padding:8px 4px;">⬥ 발동 중인 세트 효과 없음</div>`;
+  }
+
+  // 5. 세트 조합 가이드 (장착한 카드가 포함된 모든 족보)
   if (potentialSets.length > 0) {
     html += `<div class="divider"><div class="divider-txt" style="font-size:8px;">세트 조합 가이드</div></div>`;
     potentialSets.forEach(def => {
       const gl = GRADE_LABEL[def.grade] || def.grade;
-      const equippedTypes = new Set(equipped.map(c => c.type));
       const matchCount = def.cardTypes.filter(t => equippedTypes.has(t)).length;
       
+      // [개선] 카드 목록 생성: 장착 여부에 따라 스타일 분기
       const cardListHtml = def.cardTypes.map(type => {
         const isEquipped = equippedTypes.has(type);
-        return `<span style="color:${isEquipped ? 'var(--gold)' : 'var(--text3)'}; ${isEquipped ? 'font-weight:bold' : 'opacity:0.5'}">${type}</span>`;
-      }).join('<span style="color:var(--border2); margin:0 3px;">/</span>');
+        if (isEquipped) {
+          // 장착된 카드는 노란색 강조
+          return `<span style="color:var(--gold); font-weight:bold;">${type}</span>`;
+        } else {
+          // 장착되지 않은 카드는 회색 비활성화 느낌
+          return `<span style="color:var(--text3); opacity:0.5;">${type}</span>`;
+        }
+      }).join('<span style="color:var(--border2); margin:0 3px;">/</span>'); // 구분선 추가
 
       html += `
-        <div class="potential-set-row" style="padding: 8px; border: 1px dashed var(--border2); border-radius: 6px; margin-bottom: 6px;">
+        <div class="potential-set-row" style="border-style: solid; border-color: rgba(255,255,255,0.05);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
             <span style="font-size:11px; font-weight:700; color:var(--text2);">${def.name}</span>
-            <span class="potential-badge" style="font-size:9px; color:var(--text3); border: 1px solid var(--border); padding: 1px 4px; border-radius: 3px;">${gl} (${matchCount}/${def.size})</span>
+            <span class="potential-badge" style="background:rgba(255,255,255,0.03);">${gl} (${matchCount}/${def.size})</span>
           </div>
-          <div style="font-size:10px; line-height:1.5;">${cardListHtml}</div>
+          <div style="font-size:10px; line-height:1.5; padding:4px 0;">
+            ${cardListHtml}
+          </div>
         </div>`;
     });
   }
 
-  // [D] 합산 스탯 섹션
+  // 6. 전체 합산 스탯 (개별 + 세트 보너스)
   const setBonusStats = {};
   activeSets.forEach(def => {
     Object.entries(def.effect || {}).forEach(([k, v]) => { setBonusStats[k] = (setBonusStats[k] || 0) + v; });
@@ -2541,35 +2524,6 @@ function obtainFromModal(cid) {
   obtainCard(cid); // 기존에 만든 획득 로직 재사용
   // 모달을 닫지 않고 계속 획득할 수 있게 두거나, 원하시면 closeModal()을 추가하세요.
   // closeModal(); 
-}
-
-// 가이드에서 세트 클릭 시 자동 장착
-function equipSetFromGuide(setId) {
-  const def = setDefs.find(s => s.id === setId);
-  if (!def) return;
-
-  // 1. 필요한 카드들이 인벤토리에 있는지 최종 확인 및 실물 객체 확보
-  const cardsToEquip = [];
-  for (const typeName of def.cardTypes) {
-    const found = userInventory.find(c => c.type === typeName);
-    if (!found) {
-      showToast(`인벤토리에 ${typeName} 카드가 부족합니다.`, 'err');
-      return;
-    }
-    cardsToEquip.push(found);
-  }
-
-  // 2. 슬롯 비우기 (기존 장착 해제 후 세트로 교체 - 기획 의도에 따라 조정 가능)
-  if (!confirm(`현재 슬롯을 비우고 [${def.name}] 세트로 교체할까요?`)) return;
-  slots = [null, null, null, null, null];
-
-  // 3. 순차적으로 장착
-  cardsToEquip.forEach((card, idx) => {
-    if (idx < 5) slots[idx] = card;
-  });
-
-  renderAll();
-  showToast(`${def.name} 세트 장착 완료!`, 'ok');
 }
 
 // [추가] 모달 내 실시간 검색 리스트 갱신

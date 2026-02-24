@@ -1,0 +1,27 @@
+Name,Enum,Limt
+공격력,AttackVary,100
+물리 방어력,PhysicalDefenseVary,50
+마법 방어력,MagicDefenseVary,50
+공격 속도,AtkSpeedVaryper,8000
+이동 속도,MoveSpeedVaryper,8000
+최대 체력,MaxHpVary,5000
+최대 마력,MaxMpVary,5000
+체력 지속 회복량,RegenHpVary,5000
+마력 지속 회복량,RegenMpVary,5000
+주는 피해 증가,DamageUpVaryper,10000
+받는 피해 감소,DamageDownVaryper,10000
+물리 피해 증가,PhysicalDamageUpVaryper,10000
+물리 피해 감소,PhysicalDamageDownVaryper,10000
+마법 피해 증가,MagicDamageUpVaryper,10000
+마법 피해 감소,MagicDamageDownVaryper,10000
+PVE 대미지 증가,PVEDamageUpVaryper,10000
+PVE 대미지 감소,PVEDamageDownVaryper,10000
+PVP 대미지 증가,PVPDamageUpVaryper,10000
+PVP 대미지 감소,PVPDamageDownVaryper,10000
+회피,DodgeVaryper,10000
+치명타 확률,CriVaryper,10000
+치명타 피해 증가,CriDamageVaryper,100000
+스킬 가속,SkillCooldownAccVary,10000
+상태 이상 회복,SCNegativeRecoveryVary,10000
+마나 소모량 감소,CostMpDownVaryper,10000
+탈 것 이동 속도,MountSpeedVaryper,10000
